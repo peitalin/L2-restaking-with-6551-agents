@@ -4,7 +4,6 @@ pragma solidity 0.8.25;
 import {Test} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20_CCIPBnM} from "../src/interfaces/IERC20_CCIPBnM.sol";
-import {IERC20Minter} from "../src/interfaces/IERC20Minter.sol";
 
 import {IStrategyManager} from "@eigenlayer-contracts/interfaces/IStrategyManager.sol";
 import {IDelegationManager} from "@eigenlayer-contracts/interfaces/IDelegationManager.sol";
@@ -12,6 +11,7 @@ import {IStrategy} from "@eigenlayer-contracts/interfaces/IStrategy.sol";
 import {IStrategyFactory} from "@eigenlayer-contracts/interfaces/IStrategyFactory.sol";
 import {IRewardsCoordinator} from "@eigenlayer-contracts/interfaces/IRewardsCoordinator.sol";
 
+import {IERC20Minter} from "./mocks/IERC20Minter.sol";
 import {IReceiverCCIPMock} from "./mocks/ReceiverCCIPMock.sol";
 import {ISenderCCIPMock} from "./mocks/SenderCCIPMock.sol";
 import {IRestakingConnector} from "../src/interfaces/IRestakingConnector.sol";
@@ -132,6 +132,10 @@ contract BaseTestEnvironment is Test, ClientSigners, ClientEncoders {
 
         eigenAgentOwner721 = agentFactory.eigenAgentOwner721();
 
+        // only for tests
+        vm.prank(deployer);
+        receiverContract.setBridgeTokens(address(tokenL1), BaseSepolia.BridgeToken);
+
         vm.deal(address(receiverContract), 1 ether);
     }
 
@@ -151,6 +155,9 @@ contract BaseTestEnvironment is Test, ClientSigners, ClientEncoders {
         vm.deal(address(senderContract), 1 ether);
 
         tokenL2 = IERC20(BaseSepolia.BridgeToken);
+        // only for tests
+        vm.prank(deployer);
+        senderContract.setBridgeTokens(address(tokenL1), BaseSepolia.BridgeToken);
     }
 
     function _whitelistContracts() private {
@@ -251,6 +258,9 @@ contract BaseTestEnvironment is Test, ClientSigners, ClientEncoders {
 
             IERC20Minter(address(tokenL1)).mint(address(receiverContract), 1 ether);
             IERC20Minter(address(tokenL1)).mint(deployer, 1 ether);
+
+            // for mock testing only
+            receiverContract.setBridgeTokens(address(tokenL1), BaseSepolia.BridgeToken);
         }
         vm.stopBroadcast();
 
@@ -272,6 +282,9 @@ contract BaseTestEnvironment is Test, ClientSigners, ClientEncoders {
 
             senderContract.allowlistSender(address(receiverContract), true);
             senderContract.allowlistSender(deployer, true);
+
+            // for mock testing only
+            senderContract.setBridgeTokens(address(tokenL1), BaseSepolia.BridgeToken);
         }
         vm.stopBroadcast();
     }
