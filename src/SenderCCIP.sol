@@ -37,17 +37,11 @@ contract SenderCCIP is Initializable, BaseMessengerCCIP {
         senderHooks = _senderHooks;
     }
 
-    /*
-     *
-     *                Receiving Messages
-     *
-     *
-    */
-
     /**
      * @dev _ccipReceiver is called when a CCIP bridge contract receives a CCIP message.
      * This contract allows us to define custom logic to handle outboound Eigenlayer messages
      * for instance, committing a withdrawalTransferRoot on outbound completeWithdrawal messages.
+     * @param any2EvmMessage contains CCIP message info such as data (message) and bridged token amounts
      */
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage)
         internal
@@ -58,26 +52,27 @@ contract SenderCCIP is Initializable, BaseMessengerCCIP {
             abi.decode(any2EvmMessage.sender, (address))
         )
     {
-        address tokenAddress;
-        uint256 tokenAmount;
-
-        if (any2EvmMessage.destTokenAmounts.length > 0) {
-            tokenAddress = any2EvmMessage.destTokenAmounts[0].token;
-            tokenAmount = any2EvmMessage.destTokenAmounts[0].amount;
+        if (any2EvmMessage.destTokenAmounts.length == 0) {
+            emit MessageReceived(
+                any2EvmMessage.messageId,
+                any2EvmMessage.sourceChainSelector,
+                abi.decode(any2EvmMessage.sender, (address)),
+                address(0),
+                0
+            );
         } else {
-            tokenAddress = address(0);
-            tokenAmount = 0;
+            for (uint32 i = 0; i < any2EvmMessage.destTokenAmounts.length; ++i) {
+                emit MessageReceived(
+                    any2EvmMessage.messageId,
+                    any2EvmMessage.sourceChainSelector,
+                    abi.decode(any2EvmMessage.sender, (address)),
+                    any2EvmMessage.destTokenAmounts[i].token,
+                    any2EvmMessage.destTokenAmounts[i].amount
+                );
+            }
         }
 
         _afterCCIPReceiveMessage(any2EvmMessage);
-
-        emit MessageReceived(
-            any2EvmMessage.messageId,
-            any2EvmMessage.sourceChainSelector,
-            abi.decode(any2EvmMessage.sender, (address)),
-            tokenAddress,
-            tokenAmount
-        );
     }
 
     /**
@@ -98,7 +93,6 @@ contract SenderCCIP is Initializable, BaseMessengerCCIP {
                 senderHooks.handleTransferToAgentOwner(message);
 
             for (uint k = 0; k < fundsTransfersArray.length; ++k) {
-
                 if (fundsTransfersArray[k].agentOwner != address(0)) {
 
                     emit SendingFundsToAgentOwner(
@@ -119,14 +113,8 @@ contract SenderCCIP is Initializable, BaseMessengerCCIP {
         }
     }
 
-    /*
-     *
-     *                Sending Messages
-     *
-     *
-    */
-
     /**
+     * @dev This function is called when sending a message.
      * @param _receiver The address of the receiver.
      * @param _text The string data to be sent.
      * @param _token The token to be transferred.

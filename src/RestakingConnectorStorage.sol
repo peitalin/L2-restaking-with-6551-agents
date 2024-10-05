@@ -31,10 +31,10 @@ abstract contract RestakingConnectorStorage is Adminable, IRestakingConnector {
 
     mapping(bytes4 => uint256) internal _gasLimitsForFunctionSelectors;
 
-    event SendingRewardsToAgentOwnerOnL1(address indexed, address indexed, uint256 indexed);
     event SetGasLimitForFunctionSelector(bytes4 indexed, uint256 indexed);
 
-    error AddressZero(string msg);
+    error AddressZero(string reason);
+    error TooManyTokensToDeposit(string reason);
 
     /*
      *
@@ -132,7 +132,7 @@ abstract contract RestakingConnectorStorage is Adminable, IRestakingConnector {
     }
 
     /**
-     * @notice outlines which token pairs are bridgeable, and their L1 and L2 addresses
+     * @notice mark a L1/L2 token pair as bridgeable, for withdrawals and rewards claiming
      * @param _bridgeTokenL1 bridging token's address on L1
      * @param _bridgeTokenL2 bridging token's address on L2
      */
